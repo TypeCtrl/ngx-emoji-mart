@@ -1,30 +1,55 @@
 version: 2.1
+
+defaults: &defaults
+  docker:
+    - image: circleci/node:lts-browsers
+  working_directory: ~/repo
+
+npm_cache: &npm_cache
+  keys:
+    - node_modules-{{ checksum "package-lock.json" }}
+    - node_modules-
+
 jobs:
-  test:
-    docker:
-      - image: circleci/node:14-browsers
-        environment:
-          CHROME_BIN: '/usr/bin/google-chrome'
+  install:
+    <<: *defaults
     steps:
       - checkout
-      - run:
-          name: npm-install
-          command: npm ci
-      - run:
-          name: test
-          command: npm run test:ci
-      - run:
-          name: lint
-          command: npm run lint
-      - run:
-          name: ghpages
-          command: npm run ghpages
-      - run:
-          name: codecov
-          command: bash <(curl -s https://codecov.io/bash)
-  release:
+      - run: npm ci
+      - save_cache:
+          key: node_modules-{{ checksum "package-lock.json" }}
+          paths:
+            - node_modules
+            - ~/.npm
+            - ~/.cache
+
+  build:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          <<: *npm_cache
+      - run: npm run lint
+      - run: npm run ghpages
+      - persist_to_workspace:
+          root: ~/repo
+          paths:
+            - dist
+      - run: bash <(curl -s https://codecov.io/bash)
+
+  cypress:
     docker:
-      - image: circleci/node:14
+      - image: cypress/base:10
+    steps:
+      - checkout
+      - restore_cache:
+          <<: *npm_cache
+      - run:
+          name: Run Cypress tests
+          command: npm run test:ci:integration
+
+  release:
+    <<: *defaults
     steps:
       - checkout
       - run: npm ci
@@ -34,13 +59,18 @@ jobs:
 workflows:
   version: 2
   test_and_release:
-    # Run the test jobs first, then the release only when all the test jobs are successful
     jobs:
-      - test
+      - install
+      - build:
+          requires:
+            - install
+      - cypress:
+          requires:
+            - build
       - release:
           filters:
             branches:
               only:
                 - master
           requires:
-            - test
+            - build

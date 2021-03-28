@@ -14,7 +14,11 @@
     "lint": "ng lint",
     "lint:fix": "ng lint --fix",
     "ghpages": "ng build --prod --no-progress",
-    "postinstall": "ngcc --properties es2015 browser module main --first-only --create-ivy-entry-points"
+    "postinstall": "ngcc --properties es2015 browser module main --first-only --create-ivy-entry-points",
+    "serve:static": "serve -l 4200 dist",
+    "cy:open": "cypress open --config integrationFolder=cypress/integration",
+    "cy:run": "cypress run --config integrationFolder=cypress/integration",
+    "test:ci:integration": "start-test serve:static 4200 cy:run"
   },
   "private": true,
   "devDependencies": {
@@ -35,7 +39,8 @@
     "@types/stringify-object": "3.3.0",
     "bootstrap": "4.6.0",
     "codelyzer": "6.0.1",
-    "core-js": "3.8.3",
+    "core-js": "3.6.5",
+    "cypress": "^6.3.0",
     "del-cli": "3.0.1",
     "emoji-datasource": "6.0.0",
     "emojilib": "2.4.0",
@@ -49,6 +54,8 @@
     "karma-mocha-reporter": "2.2.5",
     "ng-packagr": "11.1.2",
     "rxjs": "6.6.3",
+    "serve": "^11.3.2",
+    "start-server-and-test": "^1.11.7",
     "stringify-object": "3.3.0",
     "ts-node": "9.1.1",
     "tslib": "2.1.0",
